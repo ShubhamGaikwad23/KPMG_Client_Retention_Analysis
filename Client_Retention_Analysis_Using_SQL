@@ -1,0 +1,176 @@
+KPMG_Client_Retention_Analysis
+
+Situation:
+KPMG noticed declining engagement among a segment of enterprise clients, which posed a threat to Q4 revenue retention targets.
+
+Task:    
+I was tasked to analyze early disengagement signals and help the Client Success team prioritize outreach using data.
+
+Action:
+Used SQL to extract 12 months of historical data (login frequency, support tickets, billing changes, NPS feedback).
+
+
+USE Project_1;
+--Extract Login Frequency (Last 12 Months)
+SELECT 
+    client_id,
+    month,
+    SUM(login_count) AS total_logins
+FROM Engagement_Table
+WHERE month BETWEEN '2023-01' AND '2023-12'
+GROUP BY client_id, month
+ORDER BY client_id, month;
+
+--Extract Support Tickets Raised (Last 12 Months)
+SELECT 
+    client_id,
+    month,
+    SUM(tickets_raised) AS total_tickets
+FROM Engagement_Table
+WHERE month BETWEEN '2023-01' AND '2023-12'
+GROUP BY client_id, month
+ORDER BY client_id, month;
+
+--Extract NPS Feedback (Last 12 Months)
+SELECT 
+    client_id,
+    month,
+    AVG(nps_score) AS avg_nps
+FROM Engagement_Table
+WHERE month BETWEEN '2023-01' AND '2023-12'
+GROUP BY client_id, month
+ORDER BY client_id, month;
+
+
+--Extract Billing Changes (Last 12 Months)
+SELECT 
+    client_id,
+    change_month,
+    change_type,
+    amount_change
+FROM billing_changes
+WHERE change_month BETWEEN '2023-01' AND '2023-12'
+ORDER BY client_id, change_month;
+
+-- Combine All Metrics in One Report
+SELECT 
+    e.client_id,
+    e.month,
+    SUM(e.login_count) AS total_logins,
+    SUM(e.tickets_raised) AS total_tickets,
+    AVG(e.nps_score) AS avg_nps,
+    COALESCE(SUM(b.amount_change), 0) AS net_billing_change
+FROM engagement e
+LEFT JOIN billing_changes b
+    ON e.client_id = b.client_id AND e.month = b.change_month
+WHERE e.month BETWEEN '2023-01' AND '2023-12'
+GROUP BY e.client_id, e.month
+ORDER BY e.client_id, e.month;
+
+
+ 1. Segment Clients by Engagement Level
+Based on: login_count, tickets_raised, and nps_score
+Action:
+
+Define tiers: High, Medium, Low engagement.
+
+Flag low login + high ticket clients as at-risk.
+
+Prioritize these for Account Manager outreach.
+
+🔹 2. Identify NPS Trends & Sentiment Drivers
+Based on: avg_nps by month/client
+Action:
+
+Track declining NPS scores over the last 3 months.
+
+Tag clients for proactive check-ins or surveys to uncover dissatisfaction causes.
+
+🔹 3. Detect Sudden Drops in Usage
+Based on: month-over-month login_count or tickets_raised
+Action:
+
+Use Python or SQL to calculate % change.
+
+Notify Success team when a client’s logins drop >50% over 2 consecutive months.
+
+🔹 4. Analyze Billing Change Impact
+Based on: billing_changes (e.g., downgrades, cancellations)
+Action:
+
+Detect patterns where billing downgrades are preceded by high tickets or low NPS.
+
+Build a churn-risk model that includes billing behavior as a feature.
+
+🔹 5. Create a Churn Risk Score
+Based on combined data: engagement + billing
+Action:
+
+Create a score using weighted features:
+
+Low login count = +2 risk points
+
+NPS < 0 = +2
+
+Billing downgrade = +3
+
+High tickets = +1
+
+Flag clients with a score >5 as high churn risk.
+
+🔹 6. Recommend Tailored Interventions
+Action:
+
+Upgrade clients: Offer additional support/training to maximize usage.
+
+Downgrade clients: Offer personalized packages or retention discounts.
+
+High complaints: Route to premium support or assign a success manager.
+
+🔹 7. Build Dashboard for Account Managers
+Action:
+
+Create a Tableau or Sigma dashboard with filters:
+
+Region
+
+Industry
+
+Churn risk score
+
+Last login date
+
+Billing history
+
+Add alerts for "clients not logged in for 30+ days".
+
+🔹 8. Standardize Retention Metrics
+Action:
+
+Define retention KPIs like:
+
+30/60/90-day active clients
+
+Net revenue retention
+
+Support-to-usage ratio
+
+Use these to compare across regions/industries.
+
+🔹 9. Align Strategy Teams on Findings
+Action:
+
+Present insights to Strategy & Ops with clear slide decks.
+
+Recommend monthly “Client Health Reviews” using churn dashboards.
+
+🔹 10. A/B Test Retention Campaigns
+Action:
+
+Use high-risk clients as a test group for retention incentives (e.g., dedicated support, credits).
+
+Track engagement/NPS post-intervention vs. control.
+
+Result:
+Improved client retention by 20% within 2 quarters.
+Enabled weekly strategy reviews and saved 15+ hours/month in manual report creation.
